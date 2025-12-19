@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Amir & Abolfazl Calc Pro</title>
+    <style>
+        /* --- تنظیمات کلی و ریست --- */
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            outline: none; 
+            user-select: none; 
+            -webkit-tap-highlight-color: transparent; 
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'Tahoma', sans-serif;
+            background: linear-gradient(135deg, #e6e9f0 0%, #eef1f5 100%);
+            min-height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center; /* تراز عمودی و افقی دقیق */
+            overflow: hidden;
+            color: #4a5568;
+            position: relative;
+        }
+
+        /* --- استایل شیشه‌ای (Glassmorphism) پیشرفته --- */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(25px) saturate(120%);
+            -webkit-backdrop-filter: blur(25px) saturate(120%);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-top: 1px solid rgba(255, 255, 255, 0.8);
+            border-left: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 
+                0 8px 32px 0 rgba(31, 38, 135, 0.1),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+        }
+
+        /* --- کانتینر اصلی --- */
+        .main-container {
+            width: 95%;
+            max-width: 400px;
+            /* اصلاح تراز: استفاده از مارجین اتوماتیک برای اطمینان از وسط بودن */
+            margin: 0 auto; 
+            border-radius: 40px;
+            padding: 25px;
+            height: 85vh;
+            max-height: 850px;
+            min-height: 680px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 10;
+            transition: all 0.3s ease;
+        }
+
+        /* --- هدر --- */
+        header {
+            margin-bottom: 20px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        }
+        h1 { 
+            font-size: 1.3rem; 
+            font-weight: 800; 
+            color: #2d3748; 
+            letter-spacing: -0.5px;
+            text-shadow: 0 2px 5px rgba(255,255,255,0.8);
+        }
+        h1 span { color: #718096; }
+        .subtitle { 
+            font-size: 0.65rem; 
+            letter-spacing: 3px; 
+            text-transform: uppercase; 
+            color: #718096; 
+            margin-top: 4px; 
+            display: block; 
+            font-weight: 600;
+        }
+
+        /* --- تب‌ها (منو) --- */
+        .tabs {
+            display: flex;
+            background: rgba(220, 225, 235, 0.4);
+            padding: 6px;
+            border-radius: 25px;
+            margin-bottom: 25px;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+            border: 1px solid rgba(255,255,255,0.5);
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .tabs::-webkit-scrollbar { display: none; }
+        
+        .tab-btn {
+            flex: 1;
+            padding: 10px 5px;
+            white-space: nowrap;
+            border: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #64748b;
+            cursor: pointer;
+            border-radius: 20px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            z-index: 1;
+        }
+        .tab-btn.active {
+            background: #ffffff;
+            color: #2d3748;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        /* محتوای متغیر */
+        #content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding-right: 5px;
+            scrollbar-width: thin;
+        }
+        #content-area::-webkit-scrollbar { width: 4px; }
+        #content-area::-webkit-scrollbar-track { background: transparent; }
+        #content-area::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
+
+        /* --- صفحه نمایش ماشین حساب --- */
+        .display-screen {
+            background: rgba(235, 240, 245, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 25px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: right;
+            min-height: 85px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            font-size: 2.2rem; /* کمی کوچک‌تر شد تا اعداد طولانی جا شوند */
+            font-family: 'Segoe UI', monospace;
+            font-weight: 300;
+            color: #1a202c;
+            word-break: break-all;
+            box-shadow: 
+                inset 4px 4px 10px rgba(163, 177, 198, 0.3), 
+                inset -4px -4px 10px rgba(255, 255, 255, 0.8);
+        }
+
+        /* --- گرید دکمه‌ها --- */
+        .btn-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            padding-bottom: 10px;
+            justify-items: center; /* وسط‌چین کردن دکمه‌ها در سلول‌ها */
+        }
+
+        /* --- استایل دکمه‌های دایره‌ای --- */
+        .btn {
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.3);
+            /* دایره کامل */
+            width: 62px;
+            height: 62px;
+            border-radius: 50%; 
+            font-size: 1.3rem;
+            color: #4a5568;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            
+            /* افکت برجسته */
+            box-shadow: 
+                5px 5px 10px rgba(163, 177, 198, 0.2), 
+                -5px -5px 10px rgba(255, 255, 255, 0.8);
+        }
+
+        /* انیمیشن کلیک نقره‌ای سریع (Silver Spin Ring) */
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: -4px; left: -4px; right: -4px; bottom: -4px;
+            border-radius: 50%;
+            /* گرادینت نقره‌ای برای چرخش */
+            background: conic-gradient(from 0deg, transparent, #a0a0a0, #ffffff, #a0a0a0, transparent);
+            z-index: -1;
+            opacity: 0;
+        }
+
+        /* کلاس فعال برای انیمیشن */
+        .btn.spin-anim::before {
+            animation: spinRing 0.4s cubic-bezier(0, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes spinRing {
+            0% { transform: rotate(0deg); opacity: 1; }
+            100% { transform: rotate(360deg); opacity: 0; }
+        }
+
+        .btn:active { 
+            transform: scale(0.9); 
+            box-shadow: 
+                inset 3px 3px 6px rgba(163, 177, 198, 0.2), 
+                inset -3px -3px 6px rgba(255, 255, 255, 0.8);
+        }
+        
+        .btn-op { 
+            background: rgba(255, 255, 255, 0.1); 
+            color: #2d3748; 
+            font-weight: 600; 
+            font-size: 1.5rem;
+        }
+        .btn-ac { 
+            color: #e53e3e; 
+            font-weight: 700; 
+            font-size: 1rem;
+            background: rgba(255, 230, 230, 0.2);
+        }
+        /* دکمه مساوی و صفر که باید بیضی باشند */
+        .btn-eq { 
+            grid-row: span 2; 
+            height: auto; /* ارتفاع خودکار برای پر کردن دو ردیف */
+            border-radius: 35px; /* بیضی عمودی */
+            background: linear-gradient(135deg, rgba(255,255,255,0.6), rgba(255,255,255,0.1));
+            color: #2b6cb0;
+            font-size: 1.8rem;
+            border: 1px solid rgba(255,255,255,0.9);
+            width: 62px; /* عرض ثابت مثل بقیه */
+        }
+        .btn-eq::before { border-radius: 35px; } /* تطبیق انیمیشن */
+
+        .btn-zero { 
+            grid-column: span 2; 
+            width: 100%; /* عرض کامل */
+            border-radius: 35px; /* بیضی افقی */
+            justify-content: center;
+        }
+        .btn-zero::before { border-radius: 35px; }
+
+        /* --- فرم‌ها و اینپوت‌ها --- */
+        .input-group {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .glass-input {
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            padding: 12px;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 1.1rem;
+            color: #2d3748;
+            width: 100%;
+            transition: 0.3s;
+            box-shadow: inset 2px 2px 5px rgba(163, 177, 198, 0.1);
+        }
+        .glass-input:focus { 
+            background: rgba(255, 255, 255, 0.9); 
+            box-shadow: 0 0 0 2px rgba(163, 177, 198, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .result-box {
+            margin-top: 20px;
+            min-height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-weight: 700;
+            font-size: 1.3rem;
+            color: #2d3748;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        /* --- دکمه عملیات بزرگ --- */
+        .action-btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #ffffff 0%, #edf2f7 100%);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #4a5568;
+            margin-top: 15px;
+            cursor: pointer;
+            box-shadow: 
+                5px 5px 15px rgba(163, 177, 198, 0.3), 
+                -5px -5px 15px rgba(255, 255, 255, 0.9);
+            transition: 0.2s;
+        }
+        .action-btn:active { 
+            transform: scale(0.98); 
+            box-shadow: inset 3px 3px 8px rgba(163, 177, 198, 0.2); 
+        }
+
+        /* --- پس‌زمینه انیمیشنی (حباب‌های جیوه مانند) --- */
+        .blob {
+            position: absolute;
+            border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+            filter: blur(40px);
+            z-index: 1;
+            animation: fluidMove 15s infinite alternate;
+        }
+        .b1 { 
+            width: 300px; height: 300px; 
+            background: linear-gradient(to right, #ffffff, #d7d7d7);
+            top: -50px; left: -50px; opacity: 0.7;
+        }
+        .b2 { 
+            width: 350px; height: 350px; 
+            background: linear-gradient(to left, #c0c0c0, #e0e0e0);
+            bottom: -80px; right: -60px; 
+            animation-delay: -5s; opacity: 0.6;
+        }
+        .b3 {
+            width: 200px; height: 200px;
+            background: #ffffff;
+            top: 40%; left: 30%;
+            opacity: 0.4;
+            animation: fluidMove 10s infinite reverse;
+        }
+        
+        @keyframes fluidMove { 
+            0% { transform: translate(0,0) rotate(0deg); border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; } 
+            100% { transform: translate(30px, 50px) rotate(20deg); border-radius: 70% 30% 50% 50% / 30% 30% 70% 70%; } 
+        }
+
+        .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; }
+        .result-item { 
+            background: rgba(255,255,255,0.5); padding: 12px; border-radius: 18px; 
+            text-align: center; display: flex; flex-direction: column; 
+            border: 1px solid rgba(255,255,255,0.4);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+        }
+        .lbl { font-size: 0.75rem; color: #718096; margin-bottom: 4px; }
+        .val { font-size: 1.2rem; font-weight: 700; font-family: 'Segoe UI', monospace; color: #2d3748; }
+        
+        /* انیمیشن نرم‌تر برای صفحات */
+        .fade-in { animation: fadeInSmooth 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        @keyframes fadeInSmooth { 
+            from { opacity: 0; transform: translateY(20px) scale(0.95); } 
+            to { opacity: 1; transform: translateY(0) scale(1); } 
+        }
+
+        @media (max-width: 360px) {
+            .btn-grid { gap: 8px; }
+            .btn { width: 55px; height: 55px; font-size: 1.1rem; }
+            .btn-eq { width: 55px; }
+            .main-container { padding: 15px; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="blob b3"></div>
+
+    <header class="glass-panel">
+        <h1>Amirhosein <span>&</span> Abolfazl</h1>
+        <span class="subtitle">Premium Silver Edition</span>
+    </header>
+
+    <div class="glass-panel main-container">
+        
+        <div class="tabs">
+            <button onclick="switchTab('basic')" id="tab-basic" class="tab-btn active">پایه</button>
+            <button onclick="switchTab('fraction')" id="tab-fraction" class="tab-btn">کسر</button>
+            <button onclick="switchTab('equation')" id="tab-equation" class="tab-btn">معادله</button>
+            <button onclick="switchTab('number')" id="tab-number" class="tab-btn">اعداد</button>
+            <button onclick="switchTab('polygon')" id="tab-polygon" class="tab-btn">چندضلعی</button>
+            <button onclick="switchTab('triangle')" id="tab-triangle" class="tab-btn">مثلث</button>
+        </div>
+
+        <div id="content-area"></div>
+
+    </div>
+
+    <script>
+        let currentTab = 'basic';
+        let displayVal = '0';
+        let prevVal = null;
+        let operator = null;
+        let waitingForSecondOperand = false;
+        let eqMode = 'lin';
+
+        document.addEventListener('DOMContentLoaded', () => { renderBasic(); });
+
+        // تابع انیمیشن چرخش نقره‌ای
+        function triggerSpin(btn) {
+            // حذف کلاس قبلی برای ریست کردن انیمیشن
+            btn.classList.remove('spin-anim');
+            void btn.offsetWidth; // Force Reflow
+            btn.classList.add('spin-anim');
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            
+            const area = document.getElementById('content-area');
+            area.innerHTML = ''; 
+            area.classList.remove('fade-in');
+            void area.offsetWidth;
+            area.classList.add('fade-in');
+
+            if(tab === 'basic') renderBasic();
+            else if(tab === 'fraction') renderFraction();
+            else if(tab === 'equation') renderEquation();
+            else if(tab === 'number') renderNumber();
+            else if(tab === 'polygon') renderPolygon();
+            else if(tab === 'triangle') renderTriangle();
+        }
+
+        // 1. BASIC (به روز شده با دکمه‌های جدید)
+        function renderBasic() {
+            document.getElementById('content-area').innerHTML = `
+                <div class="display-screen" id="calc-display">${displayVal}</div>
+                <div class="btn-grid">
+                    <button onclick="triggerSpin(this); handleClear()" class="btn btn-ac">AC</button>
+                    <button onclick="triggerSpin(this); inputStr('(')" class="btn btn-op">(</button>
+                    <button onclick="triggerSpin(this); inputStr(')')" class="btn btn-op">)</button>
+                    <button onclick="triggerSpin(this); handleOp('/')" class="btn btn-op">÷</button>
+                    
+                    <button onclick="triggerSpin(this); handleSqrt()" class="btn btn-op">√</button>
+                    <button onclick="triggerSpin(this); inputDigit(7)" class="btn">7</button>
+                    <button onclick="triggerSpin(this); inputDigit(8)" class="btn">8</button>
+                    <button onclick="triggerSpin(this); inputDigit(9)" class="btn">9</button>
+                    
+                    <button onclick="triggerSpin(this); handleOp('*')" class="btn btn-op">×</button>
+                    <button onclick="triggerSpin(this); inputDigit(4)" class="btn">4</button>
+                    <button onclick="triggerSpin(this); inputDigit(5)" class="btn">5</button>
+                    <button onclick="triggerSpin(this); inputDigit(6)" class="btn">6</button>
+                    
+                    <button onclick="triggerSpin(this); handleOp('-')" class="btn btn-op">-</button>
+                    <button onclick="triggerSpin(this); inputDigit(1)" class="btn">1</button>
+                    <button onclick="triggerSpin(this); inputDigit(2)" class="btn">2</button>
+                    <button onclick="triggerSpin(this); inputDigit(3)" class="btn">3</button>
+
+                    <button onclick="triggerSpin(this); handleOp('+')" class="btn btn-op">+</button>
+                    <button onclick="triggerSpin(this); inputDot()" class="btn">.</button>
+                    <button onclick="triggerSpin(this); inputDigit(0)" class="btn">0</button>
+                    <button onclick="triggerSpin(this); handlePercent()" class="btn btn-op">%</button>
+                    
+                    <button onclick="triggerSpin(this); handleEqual()" class="btn btn-zero btn-eq">=</button>
+                </div>
+            `;
+        }
+
+        function updateDisplay() {
+            const d = document.getElementById('calc-display');
+            if(d) d.innerText = displayVal;
+        }
+
+        // مدیریت ورودی برای دکمه‌های جدید
+        function inputStr(char) {
+            if (displayVal === '0' || displayVal === 'Err') displayVal = char;
+            else displayVal += char;
+            updateDisplay();
+        }
+
+        function inputDigit(digit) {
+            if (waitingForSecondOperand && operator) {
+                // در حالت عملیات استاندارد (قبلی)
+                displayVal = String(digit);
+                waitingForSecondOperand = false;
+            } else {
+                if(displayVal === '0' || displayVal === 'Err') displayVal = String(digit);
+                else displayVal += digit;
+            }
+            updateDisplay();
+        }
+
+        function inputDot() {
+            if (!displayVal.includes('.')) { displayVal += '.'; updateDisplay(); }
+        }
+
+        function handleClear() {
+            displayVal = '0';
+            prevVal = null;
+            operator = null;
+            waitingForSecondOperand = false;
+            updateDisplay();
+        }
+
+        function handleSqrt() {
+            try {
+                // اگر عبارت پیچیده است eval کن بعد جذر بگیر، اگر نه مستقیم
+                let val = eval(displayVal.replace(/×/g, '*').replace(/÷/g, '/'));
+                if(val < 0) displayVal = "Err";
+                else displayVal = String(parseFloat(Math.sqrt(val).toFixed(7)));
+            } catch { displayVal = "Err"; }
+            updateDisplay();
+        }
+
+        function handlePercent() {
+            try {
+                let val = eval(displayVal.replace(/×/g, '*').replace(/÷/g, '/'));
+                displayVal = String(parseFloat((val / 100).toFixed(7)));
+            } catch { displayVal = "Err"; }
+            updateDisplay();
+        }
+
+        function handleOp(nextOp) {
+            // برای سادگی با پرانتزها، عملگر را فقط به متن اضافه می‌کنیم
+            // اگر قبلاً عدد بود
+            const lastChar = displayVal.slice(-1);
+            if(displayVal !== 'Err') {
+                displayVal += (nextOp === '*' ? '×' : (nextOp === '/' ? '÷' : nextOp));
+            }
+            updateDisplay();
+        }
+
+        function handleEqual() {
+            try {
+                // جایگزینی نمادهای نمایشی با نمادهای جاوااسکریپت
+                let expr = displayVal.replace(/×/g, '*').replace(/÷/g, '/');
+                // ارزیابی ایمن
+                let res = eval(expr);
+                if (!isFinite(res) || isNaN(res)) displayVal = 'Err';
+                else displayVal = String(parseFloat(res.toFixed(8)));
+            } catch (e) {
+                displayVal = 'Err';
+            }
+            prevVal = null;
+            operator = null;
+            waitingForSecondOperand = false;
+            updateDisplay();
+        }
+
+
+        // --- بقیه توابع (کسر، معادله و ...) بدون تغییر ---
+        
+        // 2. FRACTION
+        function renderFraction() {
+            document.getElementById('content-area').innerHTML = `
+                <div style="text-align:center; padding: 20px 0;">
+                    <div class="input-group">
+                        <div style="width:60px"><input id="n1" type="number" class="glass-input" placeholder="a"><hr style="border:0; border-top:1px solid #718096; margin:4px 0"><input id="d1" type="number" class="glass-input" placeholder="b"></div>
+                        <select id="frac-op" class="glass-input" style="width:60px; height:60px; font-weight:bold; font-size:1.2rem"><option value="+">+</option><option value="-">-</option><option value="*">×</option><option value="/">÷</option></select>
+                        <div style="width:60px"><input id="n2" type="number" class="glass-input" placeholder="c"><hr style="border:0; border-top:1px solid #718096; margin:4px 0"><input id="d2" type="number" class="glass-input" placeholder="d"></div>
+                    </div>
+                    <button onclick="triggerSpin(this); calcFraction()" class="action-btn">محاسبه کسر</button>
+                    <div id="frac-result" class="glass-panel result-box">نتیجه...</div>
+                </div>
+            `;
+        }
+        function gcd(a, b) { return b == 0 ? a : gcd(b, a % b); }
+        function calcFraction() {
+            const n1 = parseFloat(document.getElementById('n1').value), d1 = parseFloat(document.getElementById('d1').value);
+            const n2 = parseFloat(document.getElementById('n2').value), d2 = parseFloat(document.getElementById('d2').value);
+            const op = document.getElementById('frac-op').value, box = document.getElementById('frac-result');
+            if(isNaN(n1)||isNaN(d1)||isNaN(n2)||isNaN(d2)) { box.innerText = "ناقص است"; return; }
+            if(d1===0||d2===0) { box.innerText = "مخرج صفر!"; return; }
+            let rN, rD;
+            if(op==='+') { rN=n1*d2+n2*d1; rD=d1*d2; } else if(op==='-') { rN=n1*d2-n2*d1; rD=d1*d2; }
+            else if(op==='*') { rN=n1*n2; rD=d1*d2; } else { if(n2===0){box.innerText="تقسیم بر 0";return;} rN=n1*d2; rD=d1*n2; }
+            const c = gcd(Math.abs(rN), Math.abs(rD));
+            const fN=rN/c, fD=rD/c;
+            if(fD===1) box.innerHTML = `<span style="font-size:2rem">${fN}</span>`;
+            else if(fD===-1) box.innerHTML = `<span style="font-size:2rem">${-fN}</span>`;
+            else { let sN=fN, sD=fD; if(sD<0){sN=-sN; sD=-sD;} box.innerHTML = `<div style="display:inline-block; text-align:center"><div style="border-bottom:2px solid #333; padding:0 5px">${sN}</div><div>${sD}</div></div>`; }
+        }
+
+        // 3. EQUATION
+        function renderEquation() {
+            document.getElementById('content-area').innerHTML = `
+                <div style="display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap; justify-content:center;">
+                    <button onclick="triggerSpin(this); setEqMode('lin')" class="glass-input" style="padding:8px 15px; font-size:0.8rem; flex:1; min-width:60px;">خطی</button>
+                    <button onclick="triggerSpin(this); setEqMode('quad')" class="glass-input" style="padding:8px 15px; font-size:0.8rem; flex:1; min-width:60px;">درجه ۲</button>
+                    <button onclick="triggerSpin(this); setEqMode('frac')" class="glass-input" style="padding:8px 15px; font-size:0.8rem; flex:1; min-width:60px;">کسری</button>
+                    <button onclick="triggerSpin(this); setEqMode('system')" class="glass-input" style="padding:8px 15px; font-size:0.8rem; flex:1; min-width:60px;">۲مجهول</button>
+                </div>
+                <div id="eq-inputs" style="text-align:center; min-height:100px; display:flex; flex-direction:column; justify-content:center;"></div>
+                <button onclick="triggerSpin(this); solveEq()" class="action-btn">حل معادله</button>
+                <div id="eq-result" class="glass-panel result-box">...</div>
+            `;
+            setEqMode('lin');
+        }
+        function setEqMode(m) {
+            eqMode = m;
+            const c = document.getElementById('eq-inputs');
+            if(m==='lin') c.innerHTML = `<div class="input-group" dir="ltr"><input id="lin-a" class="glass-input" style="width:60px" placeholder="a">x + <input id="lin-b" class="glass-input" style="width:60px" placeholder="b"> = <input id="lin-c" class="glass-input" style="width:60px" placeholder="c"></div><small style="color:#718096">ax+b=c</small>`;
+            else if(m==='quad') c.innerHTML = `<div class="input-group" dir="ltr"><input id="q-a" class="glass-input" style="width:50px" placeholder="a">x² + <input id="q-b" class="glass-input" style="width:50px" placeholder="b">x + <input id="q-c" class="glass-input" style="width:50px" placeholder="c">=0</div>`;
+            else if(m==='system') c.innerHTML = `<div style="display:flex; flex-direction:column; gap:10px" dir="ltr"><div><input id="s-a1" class="glass-input" style="width:50px">x+<input id="s-b1" class="glass-input" style="width:50px">y=<input id="s-c1" class="glass-input" style="width:50px"></div><div><input id="s-a2" class="glass-input" style="width:50px">x+<input id="s-b2" class="glass-input" style="width:50px">y=<input id="s-c2" class="glass-input" style="width:50px"></div></div>`;
+            else if(m==='frac') c.innerHTML = `<div class="input-group" dir="ltr">(<input id="f-a" class="glass-input" style="width:50px">x+<input id="f-b" class="glass-input" style="width:50px">)/(<input id="f-c" class="glass-input" style="width:50px">x+<input id="f-d" class="glass-input" style="width:50px">)=<input id="f-e" class="glass-input" style="width:50px"></div>`;
+            document.getElementById('eq-result').innerText = '...';
+        }
+        function solveEq() {
+            const r = document.getElementById('eq-result');
+            if(eqMode==='lin') {
+                const a=parseFloat(document.getElementById('lin-a').value), b=parseFloat(document.getElementById('lin-b').value), c=parseFloat(document.getElementById('lin-c').value);
+                if(isNaN(a)||isNaN(b)||isNaN(c)){r.innerText="ورودی نامعتبر"; return;} if(a===0){r.innerText="a نباید 0 باشد"; return;}
+                r.innerText = `x = ${((c-b)/a).toFixed(4)}`;
+            } else if(eqMode==='quad') {
+                const a=parseFloat(document.getElementById('q-a').value), b=parseFloat(document.getElementById('q-b').value), c=parseFloat(document.getElementById('q-c').value);
+                if(isNaN(a)){r.innerText="ورودی نامعتبر"; return;} const d = b*b - 4*a*c;
+                if(d<0) r.innerText="ریشه حقیقی ندارد"; else if(d===0) r.innerText=`x = ${(-b/(2*a)).toFixed(4)}`;
+                else r.innerHTML=`x₁=${((-b+Math.sqrt(d))/(2*a)).toFixed(4)}<br>x₂=${((-b-Math.sqrt(d))/(2*a)).toFixed(4)}`;
+            } else if(eqMode==='system') {
+                const a1=parseFloat(document.getElementById('s-a1').value), b1=parseFloat(document.getElementById('s-b1').value), c1=parseFloat(document.getElementById('s-c1').value);
+                const a2=parseFloat(document.getElementById('s-a2').value), b2=parseFloat(document.getElementById('s-b2').value), c2=parseFloat(document.getElementById('s-c2').value);
+                const D = a1*b2 - a2*b1;
+                if(D===0) r.innerText="بدون جواب یکتا"; else r.innerHTML = `x = ${((c1*b2-c2*b1)/D).toFixed(4)}<br>y = ${((a1*c2-a2*c1)/D).toFixed(4)}`;
+            } else if(eqMode==='frac') {
+                const a=parseFloat(document.getElementById('f-a').value), b=parseFloat(document.getElementById('f-b').value), c=parseFloat(document.getElementById('f-c').value), d=parseFloat(document.getElementById('f-d').value), e=parseFloat(document.getElementById('f-e').value);
+                const den = a - e*c; if(den===0) { r.innerText="نامعتبر"; return;} const x = (e*d - b)/den;
+                if(c*x+d === 0) r.innerText="ریشه مخرج (غیرقابل قبول)"; else r.innerText=`x = ${x.toFixed(4)}`;
+            }
+        }
+
+        // 4. NUMBER PROPERTIES
+        function renderNumber() {
+            document.getElementById('content-area').innerHTML = `
+                <div style="text-align:center; padding-top:20px">
+                    <input id="num-input" type="number" class="glass-input" style="font-size:1.5rem" placeholder="عدد صحیح">
+                    <button onclick="triggerSpin(this); checkPrime()" class="action-btn">بررسی خواص</button>
+                    <div id="num-result" class="glass-panel result-box" style="flex-direction:column; gap:10px; font-size:1rem; padding:15px; height:auto; min-height:100px;">نتیجه...</div>
+                </div>
+            `;
+        }
+        function checkPrime() {
+            const n = parseInt(document.getElementById('num-input').value), box = document.getElementById('num-result');
+            if(isNaN(n)||n<1){box.innerText="عدد طبیعی وارد کنید"; return;}
+            let divs=[], pDivs=[];
+            for(let i=1; i<=n; i++) if(n%i===0) divs.push(i);
+            const isP = divs.length===2;
+            
+            let temp=n, facts={}, i=2;
+            while(i*i<=temp){ while(temp%i===0){facts[i]=(facts[i]||0)+1; temp/=i;} i++; }
+            if(temp>1) facts[temp]=(facts[temp]||0)+1;
+            let fStr = Object.entries(facts).map(([k,v])=> v>1?`${k}^${v}`:k).join(' × ');
+
+            box.innerHTML = `<div style="color:${isP?'#38a169':'#3182ce'}; font-size:1.4rem; font-weight:bold">${isP?'عدد اول است':'عدد مرکب است'}</div>
+            <div style="font-size:0.9rem; margin-top:8px; color:#4a5568">مقسوم‌علیه‌ها: ${divs.join(', ')}</div>
+            <div style="font-size:0.95rem; color:#2d3748; font-family:'Segoe UI', monospace; margin-top:5px">تجزیه: ${fStr||n}</div>`;
+        }
+
+        // 5. POLYGON
+        function renderPolygon() {
+            document.getElementById('content-area').innerHTML = `
+                <div style="text-align:center; padding-top:20px">
+                    <input id="poly-input" type="number" class="glass-input" style="font-size:1.5rem" placeholder="تعداد اضلاع">
+                    <button onclick="triggerSpin(this); calcPoly()" class="action-btn">محاسبه</button>
+                    <div id="poly-result" class="result-grid" style="margin-top:25px"></div>
+                </div>
+            `;
+        }
+        function calcPoly() {
+            const n = parseInt(document.getElementById('poly-input').value), box = document.getElementById('poly-result');
+            if(isNaN(n)||n<3){box.innerHTML="<span style='grid-column:span 2; color:#e53e3e'>n باید >= 3 باشد</span>"; return;}
+            box.innerHTML = `
+                <div class="result-item"><span class="lbl">مجموع زوایا</span><span class="val">${(n-2)*180}°</span></div>
+                <div class="result-item"><span class="lbl">هر زاویه داخلی</span><span class="val">${((n-2)*180/n).toFixed(2)}°</span></div>
+                <div class="result-item"><span class="lbl">محور تقارن</span><span class="val">${n}</span></div>
+                <div class="result-item"><span class="lbl">مرکز تقارن</span><span class="val">${n%2===0?'دارد':'ندارد'}</span></div>
+                <div class="result-item"><span class="lbl">هر زاویه خارجی</span><span class="val">${(360/n).toFixed(2)}°</span></div>
+            `;
+        }
+
+        // 6. TRIANGLE
+        function renderTriangle() {
+            document.getElementById('content-area').innerHTML = `
+                <div style="text-align:center; padding-top:20px">
+                    <p style="font-size:0.9rem; margin-bottom:15px; color:#4a5568">دو زاویه داخلی را وارد کنید:</p>
+                    <div class="input-group">
+                        <input id="t-a" type="number" class="glass-input" placeholder="A°">
+                        <input id="t-b" type="number" class="glass-input" placeholder="B°">
+                    </div>
+                    <button onclick="triggerSpin(this); calcTri()" class="action-btn">محاسبه زاویه خارجی</button>
+                    <div id="tri-result" class="glass-panel result-box">...</div>
+                </div>
+            `;
+        }
+        function calcTri() {
+            const a = parseFloat(document.getElementById('t-a').value), b = parseFloat(document.getElementById('t-b').value);
+            const box = document.getElementById('tri-result');
+            if(isNaN(a)||isNaN(b)){box.innerText="عدد وارد کنید"; return;}
+            if(a+b>=180){box.innerText="مجموع باید < 180 باشد"; return;}
+            box.innerHTML = `<span style="color:#3182ce; font-size:2.5rem">${a+b}°</span>`;
+        }
+    </script>
+</body>
+</html>
+
